@@ -1,0 +1,5 @@
+libvirt-python
+flask
+flask_cors
+uwsgi
+typer

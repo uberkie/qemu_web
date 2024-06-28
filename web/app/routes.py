@@ -1,16 +1,29 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, Blueprint
 from flask_cors import CORS
 import os
 import libvirt
+import xml.etree.ElementTree as ET
 
-
-app = Flask(__name__, static_url_path='', static_folder='ui')
-CORS(app)  # Enable CORS for all routes
+bp = Blueprint('main', __name__)
+CORS(bp)  # Enable CORS for all routes
 
 # In-memory storage for demonstration purposes
 users = {"admin": "password"}
 sessions = {}
 vms = []
+
+# Path to your UI folder containing static files
+ui_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
+
+
+@bp.route("/")
+def serve_index():
+    return send_from_directory(ui_folder_path, "index.html")
+
+
+@bp.route("/<path:path>")
+def serve_static(path):
+    return send_from_directory(ui_folder_path, path)
 
 
 def get_libvirt_connection():
@@ -21,7 +34,7 @@ def get_libvirt_connection():
         return None
 
 
-@app.route('/api/login', methods=['POST'])
+@bp.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     username = data.get('username')
@@ -32,7 +45,7 @@ def login():
     return jsonify({"message": "Invalid credentials"}), 401
 
 
-@app.route('/api/logout', methods=['POST'])
+@bp.route('/api/logout', methods=['POST'])
 def logout():
     data = request.json
     username = data.get('username')
@@ -40,7 +53,7 @@ def logout():
     return jsonify({"message": "Logout successful"}), 200
 
 
-@app.route('/api/vms', methods=['GET'])
+@bp.route('/api/vms', methods=['GET'])
 def list_vms():
     conn = get_libvirt_connection()
     if not conn:
@@ -62,6 +75,7 @@ def list_vms():
                 'memory': domain.info()[2],  # Memory in use
                 'vcpus': domain.info()[3],  # Number of virtual CPUs
                 'autostart': domain.autostart()
+
             }
             vms.append(vm_info)
 
@@ -72,7 +86,7 @@ def list_vms():
         conn.close()
 
 
-@app.route('/api/vms/<name>', methods=['GET'])
+@bp.route('/api/vms/<name>/', methods=['GET'])
 def details_vm(name):
     conn = get_libvirt_connection()
     if not conn:
@@ -80,6 +94,35 @@ def details_vm(name):
 
     try:
         domain = conn.lookupByName(name)
+        xml_desc = domain.XMLDesc()
+        root = ET.fromstring(xml_desc)
+
+        # Parse disk information
+        disks = root.findall('devices/disk')
+        disk_info = []
+        cdrom_info = []
+
+        for disk in disks:
+            disk_target = disk.find('target').get('dev')
+            source = disk.find('source')
+            if source is not None:
+                disk_location = source.get('file')
+            else:
+                disk_location = None
+
+            # Determine if it's a disk or a CD-ROM
+            if disk.get('device') == 'cdrom':
+                cdrom_info.append({
+                    'target': disk_target,
+                    'location': disk_location,
+
+                })
+            else:
+                disk_info.append({
+                    'location': disk_location,
+                    'target': disk_target
+                })
+
         vm_details = {
             'name': domain.name(),
             'id': domain.ID(),
@@ -88,8 +131,11 @@ def details_vm(name):
             'max_memory': domain.maxMemory(),
             'memory': domain.info()[2],  # Memory in use
             'vcpus': domain.info()[3],  # Number of virtual CPUs
-            'autostart': domain.autostart()
+            'autostart': domain.autostart(),
+            'disks': disk_info,
+            'cdroms': cdrom_info
         }
+
         return jsonify(vm_details), 200
     except libvirt.libvirtError as e:
         return jsonify({'error': f'VM not found: {str(e)}'}), 404
@@ -97,7 +143,8 @@ def details_vm(name):
         if conn is not None:
             conn.close()
 
-@app.route('/api/vms/<name>', methods=['DELETE'])
+
+@bp.route('/api/vms/<name>/', methods=['DELETE'])
 def delete_vm(name):
     conn = get_libvirt_connection()
     if not conn:
@@ -114,7 +161,7 @@ def delete_vm(name):
         conn.close()
 
 
-@app.route('/api/vms', methods=['POST'])
+@bp.route('/api/vms', methods=['POST'])
 def create_vm():
     conn = get_libvirt_connection()
     if not conn:
@@ -157,19 +204,19 @@ def create_vm():
 
 
 # Serve the UI
-@app.route('/')
+@bp.route('/')
 def serve_ui():
-    return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory(bp.static_folder, 'index.html')
 
 
-@app.route('/vms/<vm_name>/snapshots', methods=['GET'])
-def list_snapshots(vm_name):
+@bp.route('/api/vms/<name>/snapshots', methods=['GET'])
+def list_snapshots(name):
     conn = get_libvirt_connection()
     if not conn:
         return jsonify({'error': 'Could not connect to libvirt'}), 500
 
     try:
-        domain = conn.lookupByName(vm_name)
+        domain = conn.lookupByName(name)
         snapshots = domain.snapshotListNames()
         return jsonify({'snapshots': snapshots})
     except libvirt.libvirtError as e:
@@ -178,8 +225,8 @@ def list_snapshots(vm_name):
         conn.close()
 
 
-@app.route('/vms/<vm_name>/snapshots', methods=['POST'])
-def create_snapshot(vm_name):
+@bp.route('/api/vms/<name>/snapshots', methods=['POST'])
+def create_snapshot(name):
     snapshot_name = request.json.get('name')
     if not snapshot_name:
         return jsonify({'error': 'Snapshot name is required'}), 400
@@ -189,11 +236,11 @@ def create_snapshot(vm_name):
         return jsonify({'error': 'Could not connect to libvirt'}), 500
 
     try:
-        domain = conn.lookupByName(vm_name)
+        domain = conn.lookupByName(name)
         xml = f"""
         <domainsnapshot>
             <name>{snapshot_name}</name>
-            <description>Snapshot of {vm_name}</description>
+            <description>Snapshot of {name}</description>
         </domainsnapshot>
         """
         domain.snapshotCreateXML(xml, 0)
@@ -204,14 +251,14 @@ def create_snapshot(vm_name):
         conn.close()
 
 
-@app.route('/vms/<vm_name>/snapshots/<snapshot_name>/restore', methods=['POST'])
-def restore_snapshot(vm_name, snapshot_name):
+@bp.route('/api/vms/<name>/snapshots/<snapshot_name>/restore', methods=['POST'])
+def restore_snapshot(name, snapshot_name):
     conn = get_libvirt_connection()
     if not conn:
         return jsonify({'error': 'Could not connect to libvirt'}), 500
 
     try:
-        domain = conn.lookupByName(vm_name)
+        domain = conn.lookupByName(name)
         snapshot = domain.snapshotLookupByName(snapshot_name)
         domain.revertToSnapshot(snapshot, 0)
         return jsonify({'message': 'Snapshot restored successfully'})
@@ -221,14 +268,14 @@ def restore_snapshot(vm_name, snapshot_name):
         conn.close()
 
 
-@app.route('/vms/<vm_name>/snapshots/<snapshot_name>', methods=['DELETE'])
-def delete_snapshot(vm_name, snapshot_name):
+@bp.route('/api/vms/<name>/snapshots/<snapshot_name>', methods=['DELETE'])
+def delete_snapshot(name, snapshot_name):
     conn = get_libvirt_connection()
     if not conn:
         return jsonify({'error': 'Could not connect to libvirt'}), 500
 
     try:
-        domain = conn.lookupByName(vm_name)
+        domain = conn.lookupByName(name)
         snapshot = domain.snapshotLookupByName(snapshot_name)
         snapshot.delete(0)
         return jsonify({'message': 'Snapshot deleted successfully'})
@@ -238,11 +285,4 @@ def delete_snapshot(vm_name, snapshot_name):
         conn.close()
 
 
-# Ensure other static files are served
-@app.route('/<path:path>')
-def static_files(path):
-    return send_from_directory(app.static_folder, path)
 
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8081)

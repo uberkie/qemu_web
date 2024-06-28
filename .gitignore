@@ -20,6 +20,10 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
-node_modules
-env
-/frontend/package-lock.json
+
+/web/frontend/node_modules/
+/env/
+/web/frontend/package-lock.json
+
+/web/frontend/build/
+/web/app/ui/

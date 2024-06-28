@@ -45,10 +45,24 @@ const VMList = () => {
         }
     };
 
+    const handleDetails = (vmName) => {
+        navigate(`/vms/${vmName}`);
+    };
+
     return (
         <div>
             <h2>VM List</h2>
-            <form onSubmit={handleCreateVm}>
+            <div style={{ marginBottom: '16px' }}>
+                <select onChange={(e) => {
+                    if (e.target.value === 'create') {
+                        handleCreateVm();
+                    }
+                }}>
+                    <option value="">Select an action</option>
+                    <option value="create">Create VM</option>
+                </select>
+            </div>
+            <form onSubmit={handleCreateVm} style={{ display: 'none' }}>
                 <input
                     type="text"
                     placeholder="VM Name"
@@ -69,8 +83,8 @@ const VMList = () => {
             <ul>
                 {vms.map((vm) => (
                     <li key={vm.name}>
-                        {vm.name} - {vm.cpus} CPUs
-                        <button onClick={() => navigate(`http://localhost:8081/api/vms/${vm.name}`)}>Details</button>
+                        {vm.name} - {vm.vcpus} CPUs {vm.id} - {vm.memory}
+                        <button onClick={() => handleDetails(vm.name)}>Details</button>
                     </li>
                 ))}
             </ul>
