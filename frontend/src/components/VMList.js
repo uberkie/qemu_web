@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 const VMList = () => {
     const [vms, setVms] = useState([]);
     const [name, setName] = useState('');
+    const [id, setId] = useState('');
     const [cpus, setCpus] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -69,7 +70,7 @@ const VMList = () => {
                 {vms.map((vm) => (
                     <li key={vm.name}>
                         {vm.name} - {vm.cpus} CPUs
-                        <button onClick={() => navigate(`/vms/${vm.name}`)}>Details</button>
+                        <button onClick={() => navigate(`http://localhost:8081/api/vms/${vm.name}`)}>Details</button>
                     </li>
                 ))}
             </ul>
