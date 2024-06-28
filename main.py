@@ -72,7 +72,7 @@ def list_vms():
         conn.close()
 
 
-@app.route('/api/vms/<name>', methods=['POST'])
+@app.route('/api/vms/<name>', methods=['GET'])
 def details_vm(name):
     conn = get_libvirt_connection()
     if not conn:
@@ -80,19 +80,22 @@ def details_vm(name):
 
     try:
         domain = conn.lookupByName(name)
-        name= domain.name()
-        id = domain.ID()
-        state = domain.state()[0]
-        uuid = domain.UUIDString()
-        max_memory = domain.maxMemory()
-        memory = domain.info()[2]  # Memory in use
-        vcpus = domain.info()[3]  # Number of virtual CPUs
-        autostart = domain.autostart()
-        return jsonify({'message': f'VM {name} details'}), 200
+        vm_details = {
+            'name': domain.name(),
+            'id': domain.ID(),
+            'state': domain.state()[0],
+            'uuid': domain.UUIDString(),
+            'max_memory': domain.maxMemory(),
+            'memory': domain.info()[2],  # Memory in use
+            'vcpus': domain.info()[3],  # Number of virtual CPUs
+            'autostart': domain.autostart()
+        }
+        return jsonify(vm_details), 200
     except libvirt.libvirtError as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'VM not found: {str(e)}'}), 404
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 @app.route('/api/vms/<name>', methods=['DELETE'])
 def delete_vm(name):
