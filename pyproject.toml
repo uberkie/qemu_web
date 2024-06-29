@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qemuweb"
+authors = [
+  { name="Network Ninja", email="uberkie85@gmail.com" },
+]
+description = "Qemu Web"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.9, <3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+
+dependencies = [
+    "flask",
+    "typer",
+    "uwsgi",
+    "libvirt-python",
+    "flask_cors",
+    "sqlite3"
+]
+optional-dependencies = {web = ["flask", "uwsgi"], database = ["sqlite3"]}
+
+dynamic = ["version"]
+
+[tool.setuptools]
+include-package-data = true
+
+
+[tool.setuptools.dynamic]
+version = {attr = "qemuweb.version.VERSION"}
+readme = {file = ["README.md"]}
+
+[tool.setuptools.packages.find]
+include = ["qemuweb*"]
+exclude = ["*.tests*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"qemuweb" = ["*.*"]
+
+
+[project.urls]
+"Homepage" = "https://github.com/uberkie/qemu_web"
+"Bug Tracker" = "https://github.com/uberkie/qemu_web/issues"
+
+[project.scripts]
+qemuweb = "web.cli:run"

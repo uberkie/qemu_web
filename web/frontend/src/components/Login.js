@@ -13,6 +13,9 @@ const Login = ({ setAuth }) => {
         try {
             const response = await axios.post('http://localhost:8081/api/login', { username, password });
             if (response.status === 200) {
+                // Save session data
+                sessionStorage.setItem('auth', true);
+                sessionStorage.setItem('username', username);
                 setAuth(true);
                 navigate('/vms');
             }
