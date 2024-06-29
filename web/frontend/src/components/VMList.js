@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import Modal from 'react-modal';
 
 const VMList = () => {
     const [vms, setVms] = useState([]);
@@ -8,6 +9,8 @@ const VMList = () => {
     const [id, setId] = useState('');
     const [cpus, setCpus] = useState('');
     const [error, setError] = useState('');
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [selectedVm, setSelectedVm] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -49,6 +52,16 @@ const VMList = () => {
         navigate(`/vms/${vmName}`);
     };
 
+    const openModal = (vm) => {
+        setSelectedVm(vm);
+        setModalIsOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalIsOpen(false);
+        setSelectedVm(null);
+    };
+
     return (
         <div>
             <h2>VM List</h2>
@@ -83,11 +96,23 @@ const VMList = () => {
             <ul>
                 {vms.map((vm) => (
                     <li key={vm.name}>
-                        {vm.name} - {vm.vcpus} CPUs {vm.id} - {vm.memory}
-                        <button onClick={() => handleDetails(vm.name)}>Details</button>
+                        {vm.name} - {vm.vcpus} CPUs {vm.id} - {vm.memory} - {vm.vm_os}
+                        <button onClick={() => openModal(vm)}>Details</button>
                     </li>
                 ))}
             </ul>
+            {selectedVm && (
+                <Modal isOpen={modalIsOpen} onRequestClose={closeModal}>
+                    <h2>{selectedVm.name}</h2>
+                    <p>ID: {selectedVm.id}</p>
+                    <p>CPUs: {selectedVm.vcpus}</p>
+                    <p>Memory: {selectedVm.memory / 1024} MB</p>
+                    <p>OS: {selectedVm.vm_os}</p>
+                    <img src={`path_to_image/${selectedVm.os_image}`} alt="OS running" />
+                    <button onClick={() => handleDetails(selectedVm.name)}>Show Details</button>
+                    <button onClick={closeModal}>Close</button>
+                </Modal>
+            )}
         </div>
     );
 };

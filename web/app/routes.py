@@ -1,8 +1,9 @@
-from flask import Flask, jsonify, request, send_from_directory, Blueprint
-from flask_cors import CORS
 import os
-import libvirt
 import xml.etree.ElementTree as ET
+
+import libvirt
+from flask import jsonify, request, send_from_directory, Blueprint
+from flask_cors import CORS
 
 bp = Blueprint('main', __name__)
 CORS(bp)  # Enable CORS for all routes
@@ -14,6 +15,25 @@ vms = []
 
 # Path to your UI folder containing static files
 ui_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
+
+
+def extract_os_from_metadata(xml_desc):
+    try:
+        # Parse the XML
+        root = ET.fromstring(xml_desc)
+
+        # Find the OS ID in the metadata
+        namespace = {'libosinfo': 'http://libosinfo.org/xmlns/libvirt/domain/1.0'}
+        os_info = root.find('.//libosinfo:os', namespace)
+
+        if os_info is not None:
+            os_id = os_info.get('id', 'Unknown OS')
+            return os_id
+        else:
+            return 'Unknown OS'
+    except ET.ParseError as e:
+        print(f"XML Parse Error: {e}")
+        return 'Unknown OS'
 
 
 @bp.route("/")
@@ -66,16 +86,21 @@ def list_vms():
 
         vms = []
         for domain in domains:
+            xml_desc = domain.XMLDesc()
+
+            # Extract VM OS from the metadata
+            vm_os = extract_os_from_metadata(xml_desc)
+
             vm_info = {
                 'name': domain.name(),
                 'id': domain.ID(),
                 'state': domain.state()[0],
                 'uuid': domain.UUIDString(),
+                'vm_os': vm_os,
                 'max_memory': domain.maxMemory(),
                 'memory': domain.info()[2],  # Memory in use
                 'vcpus': domain.info()[3],  # Number of virtual CPUs
                 'autostart': domain.autostart()
-
             }
             vms.append(vm_info)
 
@@ -83,7 +108,8 @@ def list_vms():
     except libvirt.libvirtError as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @bp.route('/api/vms/<name>/', methods=['GET'])
@@ -97,6 +123,8 @@ def details_vm(name):
         xml_desc = domain.XMLDesc()
         root = ET.fromstring(xml_desc)
 
+        # Extract VM OS from the metadata
+        vm_os = extract_os_from_metadata(xml_desc)
         # Parse disk information
         disks = root.findall('devices/disk')
         disk_info = []
@@ -128,6 +156,7 @@ def details_vm(name):
             'id': domain.ID(),
             'state': domain.state()[0],
             'uuid': domain.UUIDString(),
+            'vm_os': vm_os,
             'max_memory': domain.maxMemory(),
             'memory': domain.info()[2],  # Memory in use
             'vcpus': domain.info()[3],  # Number of virtual CPUs
@@ -283,6 +312,3 @@ def delete_snapshot(name, snapshot_name):
         return jsonify({'error': str(e)}), 500
     finally:
         conn.close()
-
-
-

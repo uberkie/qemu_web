@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,14 +8,22 @@ const Login = ({ setAuth }) => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const auth = localStorage.getItem('auth');
+        if (auth) {
+            setAuth(true);
+            navigate('/vms');
+        }
+    }, [setAuth, navigate]);
+
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
             const response = await axios.post('http://localhost:8081/api/login', { username, password });
             if (response.status === 200) {
                 // Save session data
-                sessionStorage.setItem('auth', true);
-                sessionStorage.setItem('username', username);
+                localStorage.setItem('auth', true);
+                localStorage.setItem('username', username);
                 setAuth(true);
                 navigate('/vms');
             }

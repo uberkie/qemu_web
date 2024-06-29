@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 
+
 const VMDetails = () => {
     const { name } = useParams();
     const [vcpus, setVcpus] = useState('');
     const [id, setId] = useState('');
     const [memory, setMemory] = useState('');
+    const [vm_os, setVm_os] = useState('');
 
     const [vm, setVm] = useState(null);
+
     let stateMessage;
     if (vm && vm.state === 5) {
         stateMessage = 'SHUTOFF';
@@ -77,6 +80,7 @@ const VMDetails = () => {
             <p>ID: {vm.id}</p>
             <p>Memory: {(vm.memory / 1024 / 1024).toFixed(2)} GB</p>
             <p>State: {stateMessage}</p>
+            <p>OS: {vm.vm_os}</p>
             <div>
             <p>Disks:</p>
             <ul>
