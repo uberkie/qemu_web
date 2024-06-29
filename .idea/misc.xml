@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
-    <option name="sdkName" value="Python 3.12 (qemu_web_api)" />
+    <option name="enabledOnReformat" value="true" />
+    <option name="sdkName" value="Python 3.10 (qemu_web)" />
+  </component>
+  <component name="ProjectResources">
+    <xml-schema-version>XMLSchema_1_1</xml-schema-version>
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (qemu_web)" project-jdk-type="Python SDK" />
 </project>

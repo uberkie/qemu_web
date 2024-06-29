@@ -5,14 +5,16 @@ import './index.css';
 import App from './App';
 import {DevSupport} from "@react-buddy/ide-toolbox";
 import {ComponentPreviews, useInitial} from "./dev";
+import {createRoot} from "react-dom/client";
 
-ReactDOM.render(
+createRoot(
+    document.getElementById('root')
+).render(
     <React.StrictMode>
         <DevSupport ComponentPreviews={ComponentPreviews}
                     useInitialHook={useInitial}
         >
             <App/>
         </DevSupport>
-    </React.StrictMode>,
-    document.getElementById('root')
+    </React.StrictMode>
 );

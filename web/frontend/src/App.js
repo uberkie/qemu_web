@@ -5,6 +5,7 @@ import Login from './components/Login';
 import VMList from './components/VMList';
 import VMDetails from './components/VMDetails';
 import VMSnapshots from "./components/VMSnapshots";
+import Scheduler from "./components/Scheduler";
 
 const App = () => {
     const [isAuth, setAuth] = useState(false);
@@ -16,6 +17,7 @@ const App = () => {
                 <Route path="/vms" element={isAuth ? <VMList /> : <Navigate to="/" />} />
                 <Route path="/vms/:name" element={isAuth ? <VMDetails /> : <Navigate to="/" />} />
                 <Route path="/vms/:name/snapshots" element={isAuth ? <VMSnapshots /> : <Navigate to="/" />} />
+                <Route path="/schedule/:vmName" element={isAuth ? <Scheduler /> : <Navigate to="/"  />} />
             </Routes>
         </Router>
     );

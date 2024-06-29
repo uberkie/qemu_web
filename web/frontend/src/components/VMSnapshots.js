@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
 const VMSnapshots = () => {
     const { name } = useParams();
@@ -59,6 +60,7 @@ const VMSnapshots = () => {
     };
 
     return (
+        <div className="w3-theme-d5">
         <div className="container mt-4">
             <h2>Snapshots for VM: {name}</h2>
             {error && <p className="text-danger">{error}</p>}
@@ -79,19 +81,25 @@ const VMSnapshots = () => {
             
             <ul className="list-group mb-3" style={{ marginBottom: '10px' }}>
                 {snapshots.map((snapshot, index) => (
-                    <div>
-                    <li key={index} >
-                        <div >{snapshot}</div>
-                        <div>
-                            <br/>
-                            <button onClick={() => handleRestoreSnapshot(snapshot)} className="btn btn-secondary btn-sm me-2">Restore</button>
-                            <button onClick={() => handleDeleteSnapshot(snapshot)} className="btn btn-danger btn-sm">Delete</button>
-                        </div>
-                    </li>
+                    <div key={index}>
+                        <li>
+                            <div>{snapshot}</div>
+                            <div>
+                                <br/>
+                                <button onClick={() => handleRestoreSnapshot(snapshot)} className="btn btn-secondary btn-sm me-2">Restore</button>
+                                <button onClick={() => handleDeleteSnapshot(snapshot)} className="btn btn-danger btn-sm">Delete</button>
+                            </div>
+                        </li>
                     </div>
                 ))}
             </ul>
+            <div>
+                <Link to={`/schedule/${name}`} className="btn btn-primary mt-3">Schedule Snapshot</Link>
+            </div>
+            <div>
             <button onClick={handleHome} className="btn btn-secondary">Back to VMs</button>
+            </div>
+        </div>
         </div>
     );
 };

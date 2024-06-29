@@ -96,6 +96,7 @@ def list_vms():
                 'id': domain.ID(),
                 'state': domain.state()[0],
                 'uuid': domain.UUIDString(),
+
                 'vm_os': vm_os,
                 'max_memory': domain.maxMemory(),
                 'memory': domain.info()[2],  # Memory in use
@@ -122,14 +123,14 @@ def details_vm(name):
         domain = conn.lookupByName(name)
         xml_desc = domain.XMLDesc()
         root = ET.fromstring(xml_desc)
-
+        os_type = domain.OSType()
         # Extract VM OS from the metadata
         vm_os = extract_os_from_metadata(xml_desc)
         # Parse disk information
         disks = root.findall('devices/disk')
         disk_info = []
         cdrom_info = []
-
+        print(os_type)
         for disk in disks:
             disk_target = disk.find('target').get('dev')
             source = disk.find('source')
@@ -312,3 +313,19 @@ def delete_snapshot(name, snapshot_name):
         return jsonify({'error': str(e)}), 500
     finally:
         conn.close()
+
+
+@app.route('/api/scheduler', methods=['POST'])
+def schedule_snapshot():
+    data = request.json
+    day = data.get('day', '*')  # Default to every day if not specified
+    interval = data.get('interval', '*/1')  # Default to every minute if not specified
+    vm_name = data.get('vm_name')
+    snapshot_name = data.get('snapshot_name')
+
+    cron = CronTab(user=True)  # Create a cron job for the current user
+    job = cron.new(command=f'python3 /path/to/snapshot.py {vm_name} {snapshot_name}')
+    job.setall(f'{interval} {day} * * *')
+    cron.write()
+
+    return jsonify({"status": "success", "message": "Scheduled snapshot successfully"}), 200

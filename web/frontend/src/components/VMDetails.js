@@ -74,12 +74,12 @@ const VMDetails = () => {
     if (!vm) return <p>Loading...</p>;
 
     return (
-        <div>
+        <div  className="w3-theme-d5">
             <h2>VM Name: {name}</h2>
             <p>CPU Count: {vm.vcpus}</p>
             <p>ID: {vm.id}</p>
             <p>Memory: {(vm.memory / 1024 / 1024).toFixed(2)} GB</p>
-            <p>State: {stateMessage}</p>
+            <p style={{ color: vm.state !== 'Running' ? 'red' : 'inherit' }}>State: {stateMessage}</p>
             <p>OS: {vm.vm_os}</p>
             <div>
             <p>Disks:</p>
