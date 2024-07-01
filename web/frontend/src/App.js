@@ -1,26 +1,34 @@
-
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import VMList from './components/VMList';
-import VMDetails from './components/VMDetails';
-import VMSnapshots from "./components/VMSnapshots";
-import Scheduler from "./components/Scheduler";
+import BackupScheduler from './components/BackupScheduler';
+import Settings from './components/Settings';
+import VirtualMachineManager from './components/VirtualMachineManager';
+import SnapshotManager from './components/SnapshotManager';
+import XMLEditor from './components/XMLEditor';
+import DiskManagement from './components/DiskManagement';
+import PCIDeviceManager from './components/PCIDeviceManager';
+
 
 const App = () => {
-    const [isAuth, setAuth] = useState(false);
+  const [isAuth, setAuth] = useState(false);
 
     return (
         <Router>
-            <Routes>
-                <Route path="/" element={isAuth ? <Navigate to="/vms" /> : <Login setAuth={setAuth} />} />
-                <Route path="/vms" element={isAuth ? <VMList /> : <Navigate to="/" />} />
-                <Route path="/vms/:name" element={isAuth ? <VMDetails /> : <Navigate to="/" />} />
-                <Route path="/vms/:name/snapshots" element={isAuth ? <VMSnapshots /> : <Navigate to="/" />} />
-                <Route path="/schedule/:vmName" element={isAuth ? <Scheduler /> : <Navigate to="/"  />} />
-            </Routes>
-        </Router>
-    );
+            <div className="App">
+                <Routes>
+                  <Route path="/" element={ <VirtualMachineManager /> } />
+                  <Route path="/vms" element={<VirtualMachineManager /> } />
+                    <Route path="/snapshot" element={<SnapshotManager />} />
+                  <Route path="/settings" element={<Settings /> } />
+                  <Route path="/backups" element={ <BackupScheduler />} />
+                  <Route path="/xmleditor" element={ <XMLEditor /> } />
+                    <Route path="/disks" element={ <DiskManagement /> } />
+                    <Route path="/pcidev" element={ <PCIDeviceManager /> } />
+        </Routes>
+            </div>
+      </Router>
+  );
 };
 
 export default App;
