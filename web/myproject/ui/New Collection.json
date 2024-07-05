@@ -1,0 +1,106 @@
+{
+	"info": {
+		"_postman_id": "5cf2a51c-3369-48e9-9b5e-bf70453f4179",
+		"name": "New Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_uid": "30541315-5cf2a51c-3369-48e9-9b5e-bf70453f4179"
+	},
+	"item": [
+		{
+			"name": "New Request",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5dd7f0d6-7ec9-4ce1-9d01-b9610e2b9a40",
+						"exec": [
+							"",
+							"pm.test(\"Response status code is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response time is less than 200ms\", function () {",
+							"  pm.expect(pm.response.responseTime).to.be.below(200);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Validate the response schema for the 'vms' array with required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData.vms).to.be.an('array').that.is.not.empty;",
+							"    ",
+							"    responseData.vms.forEach(vm => {",
+							"        pm.expect(vm).to.have.property('autostart').that.is.a('number');",
+							"        pm.expect(vm).to.have.property('id').that.is.a('number');",
+							"        pm.expect(vm).to.have.property('max_memory').that.is.a('number');",
+							"        pm.expect(vm).to.have.property('memory').that.is.a('number');",
+							"        pm.expect(vm).to.have.property('name').that.is.a('string');",
+							"        pm.expect(vm).to.have.property('state').that.is.a('number');",
+							"        pm.expect(vm).to.have.property('uuid').that.is.a('string');",
+							"        pm.expect(vm).to.have.property('vcpus').that.is.a('number');",
+							"    });",
+							"});",
+							"",
+							"",
+							"pm.test(\"Vms response has valid data types and values\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData.vms).to.be.an('array');",
+							"    ",
+							"    responseData.vms.forEach(vm => {",
+							"        pm.expect(vm.autostart).to.be.a('number');",
+							"        pm.expect(vm.id).to.be.a('number');",
+							"        pm.expect(vm.max_memory).to.be.a('number');",
+							"        pm.expect(vm.memory).to.be.a('number');",
+							"        pm.expect(vm.name).to.be.a('string');",
+							"        pm.expect(vm.state).to.be.a('number');",
+							"        pm.expect(vm.uuid).to.be.a('string');",
+							"    });",
+							"});",
+							"",
+							"",
+							"pm.test(\"Vcpus field is a non-negative integer\", function () {",
+							"  const responseData = pm.response.json();",
+							"  ",
+							"  pm.expect(responseData.vms).to.be.an('array');",
+							"  responseData.vms.forEach(function(vm) {",
+							"    pm.expect(vm.vcpus).to.be.a('number');",
+							"    pm.expect(vm.vcpus).to.be.at.least(0);",
+							"  });",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"id": "c887409a-96d2-4cbe-a2a5-2dbbf50444fa",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://192.168.111.145:8081/api/vms",
+					"protocol": "https",
+					"host": [
+						"192",
+						"168",
+						"111",
+						"145"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"vms"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
