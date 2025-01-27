@@ -1,18 +1,35 @@
-import React, { useState } from 'react';
-import { Modal, Button, Form, Table, Container, Row, Col, Nav, Navbar } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Modal, Button, Table, Form, Container, Row, Col, Navbar, Nav } from 'react-bootstrap';
 
 import './disk.css';
 
-const DiskManagement = () => {
-    const [disks, setDisks] = useState([
-        { id: 1, name: 'ubuntu-root', size: '20 GB', type: 'qcow2', attachedTo: 'Ubuntu 20.04 LTS' },
-        { id: 2, name: 'data-disk-1', size: '100 GB', type: 'raw', attachedTo: 'Windows 10 Pro' },
-        { id: 3, name: 'backup-disk', size: '500 GB', type: 'vdi', attachedTo: 'Not Attached' },
-    ]);
-
+const DiskUsage = () => {
+    const [disks, setDisks] = useState([]);
+    const [homeDirs, setHomeDirs] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingDisk, setEditingDisk] = useState(null);
     const [diskForm, setDiskForm] = useState({ name: '', size: '', type: 'qcow2' });
+    const [loading, setLoading] = useState(true);
+    let dirname = "home"
+    useEffect(() => {
+        // Fetch disk usage data from the backend
+        const fetchDiskData = async () => {
+            try {
+                const diskResponse = await fetch('https://192.168.111.145:8081/api/diskusage');
+                const diskData = await diskResponse.json();
+                setDisks(diskData.diskStats.split('\n')); // Assuming diskStats comes as a string with multiple lines
+                const homeDirsResponse = await fetch('https://192.168.111.145:8081/api/files'); // Adjust URL for dynamic directory
+                const homeDirsData = await homeDirsResponse.json();
+                setHomeDirs(homeDirsData.homeDir);
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                setLoading(false);
+            }
+        };
+
+        fetchDiskData();
+    }, []);
 
     const openModal = (disk = null) => {
         setEditingDisk(disk);
@@ -48,12 +65,16 @@ const DiskManagement = () => {
         }
     };
 
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
     return (
         <div>
             <header>
                 <Navbar bg="dark" variant="dark">
                     <Container>
-                        <Navbar.Brand href="#home">QemuUI</Navbar.Brand>
+                       <Navbar.Brand href="#home">QemuUI</Navbar.Brand>
                         <Nav className="me-auto">
                             <Nav.Link href="/vms" className="active">Virtual Machines</Nav.Link>
                             <Nav.Link href="/disks" className="active">Disks</Nav.Link>
@@ -64,7 +85,6 @@ const DiskManagement = () => {
                             <Nav.Link href="/pcidev" className="active">Pci Devices</Nav.Link>
                             <Nav.Link href="/stats" className="active">VM Stats</Nav.Link>
                             <Nav.Link href="/diskusage"className="active">Host Disks</Nav.Link>
-
                         </Nav>
                     </Container>
                 </Navbar>
@@ -72,37 +92,37 @@ const DiskManagement = () => {
             <Container className="mt-5">
                 <Row className="mb-4">
                     <Col>
-                        <h2>Disk Management</h2>
-                        <Button variant="primary" onClick={() => openModal()}>Create New Disk</Button>
+                        <h2>Host Disk Management</h2>
                     </Col>
                 </Row>
                 <Row>
                     <Col>
                         <Table striped bordered hover>
                             <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Size</th>
-                                <th>Type</th>
-                                <th>Attached To</th>
-                                <th>Actions</th>
-                            </tr>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Size</th>
+                                    <th>Type</th>
+                                    <th>Actions</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            {disks.map(disk => (
-                                <tr key={disk.id}>
-                                    <td>{disk.name}</td>
-                                    <td>{disk.size}</td>
-                                    <td>{disk.type}</td>
-                                    <td>{disk.attachedTo}</td>
-                                    <td>
-                                        <Button variant="primary" size="sm" onClick={() => openModal(disk)}>Edit</Button>{' '}
-                                        <Button variant="danger" size="sm" onClick={() => handleDeleteDisk(disk.id)}>Delete</Button>
-                                    </td>
-                                </tr>
-                            ))}
+                                {disks.map((disk, index) => (
+                                    <tr key={index}>
+                                        <td>{disk}</td>
+                                        <td>{disk.size}</td>
+                                        <td>{disk.type}</td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </Table>
+                    </Col>
+                </Row>
+
+                <Row className="mt-4">
+                    <Col>
+                        <h3>Home Directories</h3>
+                        <pre>{homeDirs}</pre> {/* Assuming home directories will be shown as a string */}
                     </Col>
                 </Row>
             </Container>
@@ -132,19 +152,6 @@ const DiskManagement = () => {
                                 required
                             />
                         </Form.Group>
-                        <Form.Group controlId="diskType" className="mt-3">
-                            <Form.Label>Type</Form.Label>
-                            <Form.Control
-                                as="select"
-                                value={diskForm.type}
-                                onChange={(e) => setDiskForm({ ...diskForm, type: e.target.value })}
-                                required
-                            >
-                                <option value="qcow2">QCOW2</option>
-                                <option value="raw">Raw</option>
-                                <option value="vdi">VDI</option>
-                            </Form.Control>
-                        </Form.Group>
                         <Button variant="success" type="submit" className="mt-3">
                             {editingDisk ? 'Save Changes' : 'Create Disk'}
                         </Button>
@@ -155,4 +162,4 @@ const DiskManagement = () => {
     );
 };
 
-export default DiskManagement;
+export default DiskUsage;

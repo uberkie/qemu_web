@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+
+
 const Login = ({ setAuth }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -20,7 +22,7 @@ const Login = ({ setAuth }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8081/api/login', { username, password });
+            const response = await axios.post('https://192.168.111.145:8081/api/login', { username, password });
             if (response.status === 200) {
                 // Save session data
                 localStorage.setItem('auth', true);

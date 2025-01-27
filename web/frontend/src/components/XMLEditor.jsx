@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {Container, Nav, Navbar} from "react-bootstrap";
+import './xmle.css';
 
 function XMLEditor() {
     const [xmlContent, setXmlContent] = useState(`<?xml version="1.0" encoding="UTF-8"?>
@@ -132,6 +133,8 @@ function XMLEditor() {
                             <Nav.Link href="/xmleditor" className="active">XML Editor</Nav.Link>
                             <Nav.Link href="/backups" className="active">Backup Manager</Nav.Link>
                             <Nav.Link href="/pcidev" className="active">Pci Devices</Nav.Link>
+                            <Nav.Link href="/stats" className="active">VM Stats</Nav.Link>
+                            <Nav.Link href="/diskusage"className="active">Host Disks</Nav.Link>
 
                         </Nav>
                     </Container>

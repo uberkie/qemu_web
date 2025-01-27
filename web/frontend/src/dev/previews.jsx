@@ -8,6 +8,7 @@ import Settings from "../components/Settings";
 import SnapshotManager from "../components/SnapshotManager";
 import Login from "../components/Login";
 import App from "../App";
+import DiskManagement from "../components/DiskManagement";
 
 const ComponentPreviews = () => {
     return (
@@ -33,6 +34,9 @@ const ComponentPreviews = () => {
             </ComponentPreview>
             <ComponentPreview path="/App">
                 <App/>
+            </ComponentPreview>
+            <ComponentPreview path="/DiskManagement">
+                <DiskManagement/>
             </ComponentPreview>
         </Previews>
     )

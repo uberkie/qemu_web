@@ -28,3 +28,6 @@ TestResults.xml
 /web/frontend/build/
 /web/app/ui/
 !/web/frontend/src/components/Login.js
+/web/myproject/ui/node_modules/
+/web/myproject/app.log
+/web/myproject/instance/mydatabase.db

@@ -63,6 +63,8 @@ function Settings() {
                             <Nav.Link href="/xmleditor" className="active">XML Editor</Nav.Link>
                             <Nav.Link href="/backups" className="active">Backup Manager</Nav.Link>
                             <Nav.Link href="/pcidev" className="active">Pci Devices</Nav.Link>
+                            <Nav.Link href="/stats" className="active">VM Stats</Nav.Link>
+                            <Nav.Link href="/diskusage"className="active">Host Disks</Nav.Link>
 
                         </Nav>
                     </Container>

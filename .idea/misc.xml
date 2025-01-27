@@ -2,10 +2,21 @@
 <project version="4">
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
-    <option name="sdkName" value="Python 3.10 (qemu_web)" />
+    <option name="sdkName" value="Python 3.12 (qemu_web)" />
+  </component>
+  <component name="JavaScriptSettings">
+    <option name="languageLevel" value="FLOW" />
   </component>
   <component name="ProjectResources">
     <xml-schema-version>XMLSchema_1_1</xml-schema-version>
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (qemu_web)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (qemu_web)" project-jdk-type="Python SDK" />
+  <component name="StyledComponentsInjections">
+    <option name="prefixes">
+      <array>
+        <option value="" />
+        <option value="" />
+      </array>
+    </option>
+  </component>
 </project>

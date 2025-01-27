@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Card, Container, Row, Col, Nav, Navbar } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from "axios";
+import io from 'socket.io-client';
+import { confirmAlert } from 'react-confirm-alert';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function VirtualMachineManager() {
     const [vms, setVms] = useState([]);
@@ -9,14 +13,30 @@ function VirtualMachineManager() {
     const [showModal, setShowModal] = useState(false);
     const [newVM, setNewVM] = useState({ name: '', os: 'ubuntu', cpu: 1, ram: 1, disk: 10 });
     const [cpus, setCpus] = useState('');
+    const [socket, setSocket] = useState(null);
 
     useEffect(() => {
+        const socket = io('https://192.168.111.145:8081'); // Replace with your WebSocket server URL
+        setSocket(socket);
+
+        // Fetch initial VMs
         fetchVms();
+
+        // Subscribe to events
+        socket.on('vm_created', handleVmCreated);
+        socket.on('vm_status_updated', updateVMStatus);
+
+        return () => {
+            socket.disconnect();
+        };
     }, []);
+
+    const showError = (message) => toast.error(message);
+    const showSuccess = (message) => toast.success(message);
 
     const fetchVms = async () => {
         try {
-            const response = await axios.get('http://localhost:8081/api/vms');
+            const response = await axios.get('https://192.168.111.145:8081/api/vms');
             if (Array.isArray(response.data)) {
                 setVms(response.data);
             } else if (response.data.vms && Array.isArray(response.data.vms)) {
@@ -31,6 +51,10 @@ function VirtualMachineManager() {
         }
     };
 
+    const handleVmCreated = (vm) => {
+        setVms(prevVms => [...prevVms, vm]);
+    };
+
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         setNewVM(prevVM => ({ ...prevVM, [name]: name === 'name' ? value : parseInt(value) }));
@@ -39,8 +63,12 @@ function VirtualMachineManager() {
     const handleCreateVm = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8081/api/vms/create', newVM);
+            const response = await axios.post('https://192.168.111.145:8081/api/vms/create', newVM);
             setVms([...vms, response.data]);
+
+            // Emit event to server
+            socket.emit('create_vm', response.data);
+
             closeModal();
             setNewVM({ name: '', os: 'ubuntu', cpu: 1, ram: 1, disk: 10 });
         } catch (error) {
@@ -54,42 +82,124 @@ function VirtualMachineManager() {
         setShowModal(false);
         setNewVM({ name: '', os: 'ubuntu', cpu: 1, ram: 1, disk: 10 });
     };
+
     const getStateMessage = (state) => {
         switch (state) {
             case 1: return 'running';
             case 2: return 'BLOCKED';
-            case 3: return 'PAUSED';
-            case 4: return 'stopped';
-            case 5: return 'stopped';
+            case 3: return 'paused';
+            case 4: return 'shutdown';
+            case 5: return 'poweroff';
             case 6: return 'CRASHED';
             case 7: return 'SUSPENDED';
             default: return 'UNKNOWN';
         }
     };
-    const updateVMStatus = (id, newStatus) => {
-        setVms(prevVms => prevVms.map(vm => vm.id === id ? { ...vm, status: newStatus } : vm));
+
+    const confirmAction = (action, vm) => {
+        confirmAlert({
+            title: 'Confirm action',
+            message: `Are you sure you want to ${action} this VM?`,
+            buttons: [
+                {
+                    label: 'Yes',
+                    onClick: () => performAction(action, vm)
+                },
+                {
+                    label: 'No',
+                    onClick: () => {}
+                }
+            ]
+        });
     };
 
-    const getOSLogo = (osUrl) => {
-        // Extract the OS name from the URL (e.g., "ubuntu" from "http://ubuntu.com/ubuntu/20.04")
-        const osKey = osUrl.split('/')[2]?.toLowerCase();
-        const sKey = osUrl.split('/')[3]?.toLowerCase();
-        const nKey = osUrl.split('/')[4]?.toLowerCase();
+    const performAction = async (action, vm) => {
+        try {
+            // Define action mapping
+            const actionMap = {
+                start: 'start',
+                resume: 'resume',
+                reboot: 'reboot',
+                stop: 'shutdown',
+                poweroff: 'poweroff',
+            };
 
+            // Get the mapped action
+            const apiAction = actionMap[action];
+            if (!apiAction) {
+                showError(`Unknown action: ${action}`);
+                return;
+            }
 
+            // Construct the URL
+            const url = `https://192.168.111.145:8081/api/vms/${vm.name}/control/${apiAction}`;
+            console.log(url);
 
-        // Map common OS keys to their logo URLs
-        const osLogos = {
-            'ubuntu.com': 'https://assets.ubuntu.com/v1/29985a98-ubuntu-logo32.png',
-            'redhat.com': 'https://www.redhat.com/profiles/rh/themes/redhatdotcom/img/logo.png',
-            'centos.org': 'https://www.centos.org/wp-content/themes/centos7/images/centos.png',
-            'debian.org': 'https://www.debian.org/logos/openlogo-nd-100.png',
-            'suse.com': 'https://www.suse.com/wp-content/uploads/2020/01/suse-logo-icon.png',
-            'windows.com': 'https://upload.wikimedia.org/wikipedia/commons/4/48/Windows_logo_-_2021.svg'
-        };
+            // Make the request
+            await axios.post(url);
 
-        // Return the logo URL or a default logo if not found
-        return sKey + nKey //osLogos[osKey] || 'https://via.placeholder.com/32'; // Default or placeholder logo
+            // Success message
+            showSuccess(`VM ${action} successful`);
+            await fetchVms(); // Refresh VM list
+        } catch (error) {
+            // Error handling
+            if (error.response && error.response.data && error.response.data.message) {
+                showError(`Failed to ${action} VM: ${error.response.data.message}`);
+            } else {
+                showError(`Failed to ${action} VM: ${error.message}`);
+            }
+        }
+    };
+
+    const updateVMStatus = async (name, newStatus) => {
+        try {
+            // Fetch the latest VMs data
+            await fetchVms();
+
+            // Find the VM with the given ID
+            const vm = vms.find(vm => vm.name === name);
+
+            // Check if the VM is found
+            if (!vm) {
+                showError('VM not found');
+                return;
+            }
+
+            // Normalize newStatus for consistent comparison
+            const normalizedStatus = newStatus.toLowerCase();
+
+            // Check for redundant state change requests
+            if ((vm.state === 1 && normalizedStatus === 'start') ||
+                ((vm.state === 4 || vm.state === 5) && (normalizedStatus === 'shutdown' || normalizedStatus === 'poweroff'))) {
+                showError(`VM is already ${getStateMessage(vm.state)}`);
+                return;
+            }
+
+            // Perform the requested action
+            await performAction(normalizedStatus, vm);
+
+            // Update the VM's status in the state
+            setVms(prevVms => prevVms.map(vm => vm.name === name ? { ...vm, status: newStatus } : vm));
+
+        } catch (error) {
+            console.error("Error updating VM status", error);
+            showError('Failed to update VM status');
+        }
+    };
+
+    const connectToSpice = async (vmName) => {
+        try {
+            const response = await axios.get(`https://192.168.111.145:8081/api/vms/${vmName}/spice`);
+            const { address, port } = response.data;
+            const spiceUrl = `spice://${address}:${port}`;
+
+            // Here you can open the SPICE client with the given URL.
+            // This is just an example. You may need a specific SPICE client or library.
+            window.open(spiceUrl, '_blank');
+        } catch (error) {
+            console.error("Error connecting to SPICE server", error);
+            showError('Failed to connect to SPICE server');
+        }
     };
 
     const renderVMGrid = () => (
@@ -99,27 +209,25 @@ function VirtualMachineManager() {
                     <Card>
                         <Card.Body>
                             <Card.Title>{vm.name}</Card.Title>
-                            <Card.Text><strong>OS:</strong> {getOSLogo(vm.vm_os)}</Card.Text>
                             <Card.Text><strong>Status:</strong> <span className={`vm-status status-${vm.state}`}>{getStateMessage(vm.state)}</span></Card.Text>
                             <Card.Text><strong>CPU:</strong> {vm.vcpus} cores</Card.Text>
                             <Card.Text><strong>RAM:</strong> {vm.memory / 1024 / 1024} GB</Card.Text>
-                            <Card.Text><strong>Disk:</strong> {(vm.disk_capacity / 1024 / 1024 / 1024).toFixed(2)} GB</Card.Text>
                             <div className="vm-actions">
                                 {getStateMessage(vm.state) === 'running' ? (
                                     <>
-                                        <Button variant="primary" size="sm" onClick={() => console.log(`Connecting to VM ${vm.id}`)}>Connect</Button>{' '}
-                                        <Button variant="warning" size="sm" onClick={() => updateVMStatus(vm.id, 'paused')}>Pause</Button>{' '}
-                                        <Button variant="danger" size="sm" onClick={() => updateVMStatus(vm.id, 'stopped')}>Stop</Button>
+                                        <Button variant="primary" size="sm" onClick={() => connectToSpice(vm.name)}>Connect</Button>{' '}
+                                        <Button variant="warning" size="sm" onClick={() => updateVMStatus(vm.name, 'PAUSED')}>Pause</Button>{' '}
+                                        <Button variant="danger" size="sm" onClick={() => updateVMStatus(vm.name, 'poweroff')}>Power Off</Button>
                                     </>
-                                ) : getStateMessage(vm.state) === 'stopped' ? (
+                                ) : getStateMessage(vm.state) === 'poweroff' ? (
                                     <>
-                                        <Button variant="success" size="sm" onClick={() => updateVMStatus(vm.id, 'running')}>Start</Button>{' '}
-                                        <Button variant="primary" size="sm" onClick={() => console.log(`Editing VM ${vm.id}`)}>Edit</Button>
+                                        <Button variant="success" size="sm" onClick={() => updateVMStatus(vm.name, 'start')}>Start</Button>{' '}
+                                        <Button variant="primary" size="sm" onClick={() => console.log(`Editing VM ${vm.name}`)}>Edit</Button>
                                     </>
                                 ) : (
                                     <>
-                                        <Button variant="success" size="sm" onClick={() => updateVMStatus(vm.id, 'running')}>Resume</Button>{' '}
-                                        <Button variant="danger" size="sm" onClick={() => updateVMStatus(vm.id, 'stopped')}>Stop</Button>
+                                        <Button variant="success" size="sm" onClick={() => updateVMStatus(vm.name, 'start')}>Start</Button>{' '}
+                                        <Button variant="danger" size="sm" onClick={() => updateVMStatus(vm.name, 'poweroff')}>Power Off</Button>
                                     </>
                                 )}
                             </div>
@@ -144,6 +252,8 @@ function VirtualMachineManager() {
                             <Nav.Link href="/xmleditor" className="active">XML Editor</Nav.Link>
                             <Nav.Link href="/backups" className="active">Backup Manager</Nav.Link>
                             <Nav.Link href="/pcidev" className="active">Pci Devices</Nav.Link>
+                            <Nav.Link href="/stats" className="active">VM Stats</Nav.Link>
+                            <Nav.Link href="/diskusage"className="active">Host Disks</Nav.Link>
                         </Nav>
                     </Container>
                 </Navbar>
@@ -229,6 +339,7 @@ function VirtualMachineManager() {
                     </Form>
                 </Modal.Body>
             </Modal>
+            <ToastContainer />
         </div>
     );
 }

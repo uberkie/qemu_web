@@ -23,8 +23,8 @@ dependencies = [
     "typer",
     "uwsgi",
     "libvirt-python",
-    "flask_cors",
-    "sqlite3"
+
+    "pysqlite3"
 ]
 optional-dependencies = {web = ["flask", "uwsgi"], database = ["sqlite3"]}
 

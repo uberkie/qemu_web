@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Table, Container, Row, Col, Nav, Navbar } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
+
+import './back.css';
+import DiskUsage from "./DiskUsage";
 
 function BackupScheduler() {
     const [backupSchedules, setBackupSchedules] = useState([
@@ -84,6 +86,8 @@ function BackupScheduler() {
                             <Nav.Link href="/xmleditor" className="active">XML Editor</Nav.Link>
                             <Nav.Link href="/backups" className="active">Backup Manager</Nav.Link>
                             <Nav.Link href="/pcidev" className="active">Pci Devices</Nav.Link>
+                            <Nav.Link href="/stats" className="active">VM Stats</Nav.Link>
+                            <Nav.Link href="/diskusage"className="active">Host Disks</Nav.Link>
 
                         </Nav>
                     </Container>

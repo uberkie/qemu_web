@@ -2,7 +2,11 @@ libvirt-python
 flask~=3.0.3
 flask_cors
 uwsgi
-typer~=0.12.3
-sqlite3
-python-crontab~=3.1.0
-setuptools~=59.6.0
+typer
+pysqlite3
+python-crontab~=3.2.0
+setuptools~=70.2.0
+flask_socketio
+flask_sqlalchemy
+APScheduler~=3.10.4
+requests~=2.32.3

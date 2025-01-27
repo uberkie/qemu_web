@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
+
 function SnapshotManager() {
     const { name } = useParams(); // 'name' represents the VM name from the URL parameter
     const [snapshots, setSnapshots] = useState([]);
@@ -18,7 +19,7 @@ function SnapshotManager() {
     // Fetch all VM names
     const fetchVMNames = useCallback(async () => {
         try {
-            const response = await axios.get('http://localhost:8081/api/vms');
+            const response = await axios.get('https://192.168.111.145:8081/api/vms');
             if (response.data && Array.isArray(response.data.vms)) {
                 setVmNames(response.data.vms.map(vm => vm.name));
             } else {
@@ -32,7 +33,7 @@ function SnapshotManager() {
     // Fetch snapshots for a specific VM name
     const fetchSnapshotsForVM = async (vmName) => {
         try {
-            const response = await axios.get(`http://localhost:8081/api/vms/${vmName}/snapshots`);
+            const response = await axios.get(`https://192.168.111.145:8081/api/vms/${vmName}/snapshots`);
             return response.data.snapshots.map(snapshot => ({ ...snapshot, vmName }));
         } catch (error) {
             console.error(`Failed to fetch snapshots for VM "${vmName}": ${error}`);
@@ -65,7 +66,7 @@ function SnapshotManager() {
         const date = new Date().toISOString().split('T')[0];
         const snapshotNameWithDate = `${newSnapshot.name} ${date}`;
         try {
-            await axios.post(`http://localhost:8081/api/vms/${newSnapshot.vm}/snapshots`, { name: snapshotNameWithDate });
+            await axios.post(`https://192.168.111.145:8081/api/vms/${newSnapshot.vm}/snapshots`, { name: snapshotNameWithDate });
             setSnapshots([...snapshots, { name: snapshotNameWithDate, date, size: `${(Math.random() * 5 + 1).toFixed(1)} GB`, vmName: newSnapshot.vm }]);
             setNewSnapshot({ name: '', vm: '', description: '' });
             closeModal();
@@ -77,7 +78,7 @@ function SnapshotManager() {
     const restoreSnapshot = async (snapshot) => {
         if (window.confirm(`Are you sure you want to restore the snapshot "${snapshot.name}" for VM "${snapshot.vmName}"?`)) {
             try {
-                await axios.post(`http://localhost:8081/api/vms/${snapshot.vmName}/snapshots/${snapshot.name}/restore`);
+                await axios.post(`https://192.168.111.145:8081/api/vms/${snapshot.vmName}/snapshots/${snapshot.name}/restore`);
                 alert(`Snapshot "${snapshot.name}" restored successfully.`);
             } catch (error) {
                 setError('Failed to restore snapshot');
@@ -88,7 +89,7 @@ function SnapshotManager() {
     const deleteSnapshot = async (snapshot) => {
         if (window.confirm(`Are you sure you want to delete the snapshot "${snapshot.name}" for VM "${snapshot.vmName}"?`)) {
             try {
-                await axios.delete(`http://localhost:8081/api/vms/${snapshot.vmName}/snapshots/${snapshot.name}`);
+                await axios.delete(`https://192.168.111.145:8081/api/vms/${snapshot.vmName}/snapshots/${snapshot.name}`);
                 setSnapshots(snapshots.filter(snap => snap.name !== snapshot.name || snap.vmName !== snapshot.vmName));
                 alert(`Snapshot "${snapshot.name}" deleted successfully.`);
             } catch (error) {
@@ -117,6 +118,8 @@ function SnapshotManager() {
                             <Nav.Link href="/xmleditor" className="active">XML Editor</Nav.Link>
                             <Nav.Link href="/backups" className="active">Backup Manager</Nav.Link>
                             <Nav.Link href="/pcidev" className="active">PCI Devices</Nav.Link>
+                            <Nav.Link href="/stats" className="active">VM Stats</Nav.Link>
+                            <Nav.Link href="/diskusage"className="active">Host Disks</Nav.Link>
                         </Nav>
                     </Container>
                 </Navbar>
